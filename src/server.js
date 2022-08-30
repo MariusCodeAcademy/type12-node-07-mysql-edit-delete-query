@@ -35,17 +35,25 @@ app.get('/api/articles', async (req, res) => {
     // if query params id
     if (req.query.id) {
       sql = 'SELECT * FROM posts WHERE id = ?';
-    }
-    // if query params limit
-    if (req.query.limit) {
-      sql = 'SELECT * FROM posts LIMIT ?';
+      const [rows] = await conn.execute(sql, [req.query.id]);
+      res.status(200).json(rows);
+      conn.end();
+      return;
     }
 
     // http://localhost:3000/api/articles?orderBy=author
     // isrikiuoti pagal gauta parametra
+    // if query params limit
+    if (req.query.orderBy) {
+      sql += ` ORDER BY ${conn.escapeId(req.query.orderBy)}`;
+    }
+    // if query params limit
+    if (req.query.limit) {
+      sql += ` LIMIT ${conn.escape(+req.query.limit)}`;
+    }
 
-    const [rows] = await conn.execute(sql, [req.query.id || req.query.limit || null]);
-
+    console.log('sql ===', sql);
+    const [rows] = await conn.query(sql);
     res.status(200).json(rows);
     conn.end();
   } catch (error) {
@@ -74,6 +82,35 @@ app.get('/api/articles/:aId', async (req, res) => {
     });
   }
 });
+
+// DELETE /api/articles/:aId
+app.delete('/api/articles/:aId', async (req, res) => {
+  try {
+    const conn = await mysql.createConnection(dbConfig);
+    const sql = 'DELETE FROM posts WHERE id = ?';
+    const [rows] = await conn.execute(sql, [req.params.aId]);
+    if (rows.affectedRows === 1) {
+      res.json({
+        msg: 'deleted success',
+      });
+    } else {
+      res.status(400).json({
+        msg: 'nothing deleted',
+      });
+    }
+
+    conn.end();
+  } catch (error) {
+    console.log('error ', error);
+    res.status(500).json({
+      msg: 'Something went wrong',
+    });
+  }
+  // res.json({
+  //   msg: `deleting article with id ${req.params.aId}`,
+  // });
+});
+
 // 404 - returns json
 app.use((req, res) => {
   res.status(404).json({
