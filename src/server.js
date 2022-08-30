@@ -25,10 +25,27 @@ app.get('/', (req, res) => {
 // ROUTES
 // GET /api/articles - grazina visus postus
 app.get('/api/articles', async (req, res) => {
+  // gauti query parametrus
+  console.log('req.query ==='.bgGreen, req.query);
+
   try {
     const conn = await mysql.createConnection(dbConfig);
-    const sql = 'SELECT * FROM posts';
-    const [rows] = await conn.query(sql);
+    let sql = 'SELECT * FROM posts';
+
+    // if query params id
+    if (req.query.id) {
+      sql = 'SELECT * FROM posts WHERE id = ?';
+    }
+    // if query params limit
+    if (req.query.limit) {
+      sql = 'SELECT * FROM posts LIMIT ?';
+    }
+
+    // http://localhost:3000/api/articles?orderBy=author
+    // isrikiuoti pagal gauta parametra
+
+    const [rows] = await conn.execute(sql, [req.query.id || req.query.limit || null]);
+
     res.status(200).json(rows);
     conn.end();
   } catch (error) {
