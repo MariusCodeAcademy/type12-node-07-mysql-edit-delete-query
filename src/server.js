@@ -23,6 +23,7 @@ app.get('/', (req, res) => {
 });
 
 // ROUTES
+// GET /api/articles/archive - grazina visus istrintus postus
 // GET /api/articles - grazina visus postus
 app.get('/api/articles', async (req, res) => {
   // gauti query parametrus
@@ -30,8 +31,8 @@ app.get('/api/articles', async (req, res) => {
 
   try {
     const conn = await mysql.createConnection(dbConfig);
-    let sql = 'SELECT * FROM posts';
-
+    let sql = 'SELECT * FROM posts WHERE archived = 0';
+    // /api/articles - grazina visus postus kurie nera archyvuoti
     // if query params id
     if (req.query.id) {
       sql = 'SELECT * FROM posts WHERE id = ?';
@@ -87,7 +88,13 @@ app.get('/api/articles/:aId', async (req, res) => {
 app.delete('/api/articles/:aId', async (req, res) => {
   try {
     const conn = await mysql.createConnection(dbConfig);
-    const sql = 'DELETE FROM posts WHERE id = ?';
+    // const sql = 'DELETE FROM posts WHERE id = ? LIMIT 1';
+    // padaryti archived = 1 vietoj DELETE FROM
+    const sql = `
+    UPDATE posts
+    SET archived = true
+    WHERE id = ?;
+    `;
     const [rows] = await conn.execute(sql, [req.params.aId]);
     if (rows.affectedRows === 1) {
       res.json({
