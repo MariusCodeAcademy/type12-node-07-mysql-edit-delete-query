@@ -4,6 +4,7 @@ const express = require('express');
 // eslint-disable-next-line no-unused-vars
 const colors = require('colors');
 const morgan = require('morgan');
+const cors = require('cors');
 const mysql = require('mysql2/promise');
 const dbConfig = require('./config');
 
@@ -13,6 +14,8 @@ const port = process.env.PORT || 5000;
 
 // Middleware
 app.use(morgan('dev'));
+app.use(cors());
+app.use(express.json());
 // prisidedam morgan/cors
 // GET / - msg: server online
 
@@ -131,6 +134,38 @@ app.delete('/api/articles/:aId', async (req, res) => {
   // res.json({
   //   msg: `deleting article with id ${req.params.aId}`,
   // });
+});
+
+app.put('/api/articles/:aId', async (req, res) => {
+  try {
+    console.log('req.body ===', req.body);
+    const { author, category, body } = req.body;
+    const conn = await mysql.createConnection(dbConfig);
+    // const sql = 'DELETE FROM posts WHERE id = ? LIMIT 1';
+    // padaryti archived = 1 vietoj DELETE FROM
+    const sql = `
+    UPDATE posts
+    SET author = ?, category = ?, body = ?
+    WHERE id = ?;
+    `;
+    const [rows] = await conn.execute(sql, [author, category, body, req.params.aId]);
+    if (rows.affectedRows === 1) {
+      res.json({
+        msg: 'update success',
+      });
+    } else {
+      res.status(400).json({
+        msg: 'nothing update',
+      });
+    }
+
+    conn.end();
+  } catch (error) {
+    console.log('error ', error);
+    res.status(500).json({
+      msg: 'Something went wrong',
+    });
+  }
 });
 
 // 404 - returns json
