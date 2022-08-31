@@ -65,6 +65,21 @@ app.get('/api/articles', async (req, res) => {
   }
 });
 
+// GET /api/articles/archive
+app.get('/api/articles/archive', async (req, res) => {
+  try {
+    const conn = await mysql.createConnection(dbConfig);
+    const sql = 'SELECT * FROM posts WHERE archived = 1';
+    const [rows] = await conn.query(sql);
+    res.json(rows);
+    conn.end();
+  } catch (error) {
+    console.log('error ', error);
+    res.status(500).json({
+      msg: 'Something went wrong',
+    });
+  }
+});
 // GET /api/articles?id=3 - grazina straipsni kurio id lygus 3
 
 // GET /api/articles/2 - grazina straipsni kurio id lygus 2 (dinaminis routes)
